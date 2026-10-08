@@ -344,6 +344,8 @@
       'auth.signInFirst': '請先登錄後再使用競賽與排行功能',
       'auth.loginRequired': '登錄後參與競賽排名',
       'auth.noPhone': '無需手機號，使用電子郵箱即可註冊',
+      'auth.cloudBlocked': '雲端帳號功能在此網域不可用',
+      'auth.cloudBlockedHint': '登錄、全站排行榜與私人競賽房需要在本站官方網域 {domain} 才能使用。此頁面的模擬交易、行情、投資組合與圖表功能完全不受影響。',
 
       'leaderboard.title': '全站排行榜',
       'leaderboard.period.today': '今日',
@@ -742,6 +744,8 @@
       'auth.signInFirst': 'Please sign in to use competitions and rankings',
       'auth.loginRequired': 'Sign in to join the rankings',
       'auth.noPhone': 'No phone number needed — just use your email',
+      'auth.cloudBlocked': 'Cloud account features are unavailable on this domain',
+      'auth.cloudBlockedHint': 'Sign-in, the global leaderboard and private competition rooms only work on the official domain {domain}. Simulation trading, market data, portfolios and charts on this page are unaffected.',
 
       'leaderboard.title': 'Global Leaderboard',
       'leaderboard.period.today': 'Today',
