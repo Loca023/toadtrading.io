@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>模擬投資交易系統 · Paper Trading Simulator</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- ======================= Top bar ======================= -->
+  <header class="topbar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 40 40" width="36" height="36" aria-hidden="true">
+        <defs>
+          <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#3b82f6" />
+            <stop offset="1" stop-color="#1d4ed8" />
+          </linearGradient>
+        </defs>
+        <rect x="1" y="1" width="38" height="38" rx="9" fill="url(#lg)" />
+        <polyline points="7,25 14,18 20,23 26,12 33,15" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx="26" cy="12" r="2.4" fill="#fbbf24" />
+      </svg>
+      <div class="brand-text">
+        <div class="brand-title" data-i18n="app.title">模擬投資交易系統</div>
+        <div class="brand-sub" data-i18n="app.subtitle">Paper Trading Simulator</div>
+      </div>
+    </div>
+
+    <nav class="toolbar" id="toolbar">
+      <button class="tb-btn active" data-view="trade" data-i18n="nav.trade">交易</button>
+      <button class="tb-btn" data-view="observe" data-i18n="nav.observe">觀察</button>
+      <button class="tb-btn" data-view="market" data-i18n="nav.market">行情</button>
+      <button class="tb-btn" data-view="etf" data-i18n="nav.etf">ETF推薦</button>
+      <button class="tb-btn" data-view="hot" data-i18n="nav.hot">熱門排行</button>
+      <button class="tb-btn" data-view="portfolio" data-i18n="nav.portfolio">投資組合</button>
+      <button class="tb-btn" data-view="investors" data-i18n="investors.title">名人持倉</button>
+      <button class="tb-btn" data-view="fxcrypto" data-i18n="nav.fxcrypto">外匯·加密</button>
+      <button class="tb-btn" data-view="competition" data-i18n="nav.competition">競賽</button>
+    </nav>
+
+    <div class="topbar-right">
+      <select id="simSelect" class="sim-select"></select>
+      <select id="currSelect" class="sim-select" style="min-width:78px;">
+        <option value="HKD">HKD</option>
+        <option value="USD">USD</option>
+      </select>
+      <button id="btnManageSims" class="btn-ghost-small" title="賬戶管理">⚙</button>
+      <button id="btnTheme" class="btn-ghost-small" title="深色/淺色模式">◐</button>
+      <button id="btnUser" class="btn-user">登錄</button>
+      <button id="langToggle" class="lang-toggle">EN</button>
+    </div>
+  </header>
+
+  <!-- ======================= Status strip ======================= -->
+  <div class="status-strip">
+    <div class="conn" id="connStatus">
+      <span class="conn-dot" id="connDot"></span>
+      <span id="connText" data-i18n="conn.offline">緩存/模擬模式</span>
+    </div>
+    <div class="last-updated" id="lastUpdated">
+      <span data-i18n="data.lastUpdated">最後更新</span>: <span id="lastUpdatedTime">--:--:--</span>
+    </div>
+  </div>
+
+  <!-- ======================= Trade view ======================= -->
+  <div id="tradeView" class="app-grid">
+
+    <!-- ---- Watchlist ---- -->
+    <aside class="panel watchlist-panel">
+      <div class="panel-title" data-i18n="watchlist.title">市場</div>
+      <div class="search-box">
+        <input type="text" id="searchInput" class="search-input" data-i18n-ph="watchlist.search" placeholder="搜索代碼 / 名稱" />
+      </div>
+      <div class="watchlist" id="watchlist"></div>
+    </aside>
+
+    <!-- ---- Center ---- -->
+    <main class="center">
+      <div class="panel quote-panel" id="quotePanel">
+        <div id="quoteEmpty" class="quote-empty" data-i18n="quote.noSelection">從左側選擇一個資產查看行情</div>
+        <div id="quoteContent" class="quote-content" style="display:none;">
+          <div class="quote-header">
+            <div class="quote-id">
+              <span class="quote-symbol" id="quoteSymbol">--</span>
+              <span class="quote-name" id="quoteName">--</span>
+              <span class="tag" id="quoteTypeTag"></span>
+              <span class="tag tag-market" id="quoteMarketTag"></span>
+            </div>
+            <div class="quote-price-row">
+              <span class="quote-price" id="quotePrice">--</span>
+              <span class="quote-change" id="quoteChange">--</span>
+            </div>
+          </div>
+          <div class="quote-stats" id="quoteStats"></div>
+          <div class="chart-header">
+            <span class="chart-title" data-i18n="chart.title">價格走勢</span>
+            <div class="range-selector" id="rangeSelector"></div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="priceChart"></canvas>
+          </div>
+          <div class="detail-section">
+            <div class="detail-tabs" id="detailTabs">
+              <button class="detail-tab active" data-detail="profile" data-i18n="detail.profile">資料</button>
+              <button class="detail-tab" data-detail="financials" data-i18n="detail.financials">財務</button>
+              <button class="detail-tab" data-detail="dividends" data-i18n="detail.dividends">股息</button>
+              <button class="detail-tab" data-detail="performance" data-i18n="detail.performance">業績</button>
+            </div>
+            <div class="detail-content" id="detailContent"></div>
+          </div>
+        </div>
+
+        <!-- Deposit detail (no chart) -->
+        <div id="depositContent" class="deposit-content" style="display:none;">
+          <div class="quote-id">
+            <span class="quote-symbol" id="depositSymbol">--</span>
+            <span class="quote-name" id="depositName">--</span>
+            <span class="tag" id="depositTypeTag"></span>
+          </div>
+          <div class="deposit-meta" id="depositMeta"></div>
+          <div class="deposit-open-form" id="depositOpenForm"></div>
+        </div>
+      </div>
+
+      <!-- ---- Order ticket ---- -->
+      <div class="panel order-panel" id="orderPanel" style="display:none;">
+        <div class="order-tabs">
+          <button id="tabBuy" class="order-tab active buy" data-i18n="order.buy">買入</button>
+          <button id="tabSell" class="order-tab sell" data-i18n="order.sell">賣出</button>
+          <button id="tabShort" class="order-tab short" data-i18n="order.short">做空</button>
+          <button id="tabCover" class="order-tab cover" data-i18n="order.cover">平倉</button>
+        </div>
+        <div class="order-form">
+          <div class="order-row">
+            <label data-i18n="order.price">價格</label>
+            <div class="price-input-wrap">
+              <input type="number" id="orderPrice" class="order-input" step="any" />
+              <span class="order-currency" id="orderCurrency"></span>
+            </div>
+          </div>
+          <div class="order-row">
+            <label data-i18n="order.qty">數量</label>
+            <div class="qty-input-wrap">
+              <input type="number" id="orderQty" class="order-input" step="any" min="0" />
+              <button id="btnMax" class="btn-max" data-i18n="order.max">最大</button>
+            </div>
+          </div>
+          <div class="order-est" id="orderEst"></div>
+          <button id="btnSubmitOrder" class="btn btn-primary btn-block" data-i18n="order.submitBuy">買入下單</button>
+          <div class="order-msg" id="orderMsg"></div>
+        </div>
+      </div>
+
+      <!-- ---- Tabs: transactions / deposits / competition ---- -->
+      <div class="panel tabs-panel">
+        <div class="tab-bar" id="tabBar">
+          <button class="main-tab active" data-tab="tx" data-i18n="tx.title">交易記錄</button>
+          <button class="main-tab" data-tab="deposits" data-i18n="deposit.title">定期存款</button>
+        </div>
+        <div class="tab-content" id="tabContent"></div>
+      </div>
+    </main>
+
+    <!-- ---- Right: account summary + holdings ---- -->
+    <aside class="right">
+      <div class="panel account-panel">
+        <div class="panel-title" data-i18n="account.title">賬戶總覽</div>
+        <div class="bankrupt-banner" id="bankruptBanner" style="display:none;" data-i18n="account.bankrupt">已破產 · 遊戲結束</div>
+        <div class="account-hero">
+          <div class="account-item">
+            <span class="account-label" data-i18n="account.nav">淨資產</span>
+            <span class="account-value account-value-lg" id="acctTotalAssets">--</span>
+          </div>
+          <div class="account-row">
+            <div class="account-item">
+              <span class="account-label" data-i18n="account.cash">可用現金</span>
+              <span class="account-value" id="acctCash">--</span>
+            </div>
+            <div class="account-item">
+              <span class="account-label" data-i18n="account.dayPnl">當日盈虧</span>
+              <span class="account-value" id="acctDayPnl">--</span>
+            </div>
+          </div>
+          <div class="account-row">
+            <div class="account-item">
+              <span class="account-label" data-i18n="account.totalReturn">總收益率</span>
+              <span class="account-value" id="acctTotalReturn">--</span>
+            </div>
+            <div class="account-item">
+              <span class="account-label" data-i18n="account.unrealized">未實現盈虧</span>
+              <span class="account-value" id="acctUnrealized">--</span>
+            </div>
+          </div>
+          <div class="account-row">
+            <div class="account-item">
+              <span class="account-label" data-i18n="account.leverage">槓桿倍數</span>
+              <span class="account-value" id="acctLeverage">--</span>
+            </div>
+            <div class="account-item">
+              <span class="account-label" data-i18n="account.buyingPower">可用保證金</span>
+              <span class="account-value" id="acctBuyingPower">--</span>
+            </div>
+          </div>
+        </div>
+        <div class="account-deposits-line" id="acctDepositsLine"></div>
+        <div class="account-footer">
+          <button class="btn btn-ghost btn-block" id="btnReport" data-i18n="account.report">績效報告</button>
+        </div>
+      </div>
+
+      <div class="panel holdings-panel">
+        <div class="panel-title" data-i18n="account.positions">持倉</div>
+        <div class="holdings" id="holdings"></div>
+        <div class="panel-title shorts-title" data-i18n="holdings.shorts">做空持倉</div>
+        <div class="holdings" id="shorts"></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ======================= Page view (toolbar views) ======================= -->
+  <div id="pageView" class="page-view" style="display:none;"></div>
+
+  <!-- ======================= Modal ======================= -->
+  <div class="modal-backdrop" id="modalBackdrop" style="display:none;">
+    <div class="modal" id="modalBox">
+      <div class="modal-header">
+        <span class="modal-title" id="modalTitle">--</span>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- ======================= Footer / disclaimer ======================= -->
+  <footer class="disclaimer" id="disclaimer" data-i18n="app.disclaimer">本應用爲模擬盤（paper trading），使用預置與模擬行情數據，僅供學習練習，不構成任何投資建議。</footer>
+
+  <!-- ======================= Toast ======================= -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/cloud.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/market-data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/chart.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
