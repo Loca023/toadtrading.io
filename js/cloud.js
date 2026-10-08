@@ -26,6 +26,24 @@
   function ready() { return !!init(); }
   function getCloud() { return cloud; }
 
+  // The cloud server enforces an exact Origin match, so accounts / database only
+  // work when the page is served from this app's own reserved domain.
+  // (e.g. a mirror deployed on GitHub Pages can trade, but cannot log in.)
+  function originAllowed() {
+    try {
+      const cfg = global.PUBLIC_CONFIG || {};
+      if (!cfg.endpoint) return false;
+      return location.host === new URL(cfg.endpoint).host;
+    } catch (e) { return false; }
+  }
+
+  // Human-readable host the cloud backend is bound to (for UI hints).
+  function boundHost() {
+    try {
+      return new URL((global.PUBLIC_CONFIG || {}).endpoint).host;
+    } catch (e) { return ''; }
+  }
+
   // Lazily load the SDK (does not block page rendering). Resolves true/false.
   function ensureReady() {
     if (cloud) return Promise.resolve(true);
@@ -170,6 +188,8 @@
     ready: ready,
     ensureReady: ensureReady,
     getCloud: getCloud,
+    originAllowed: originAllowed,
+    boundHost: boundHost,
     getUser: getUser,
     getCurrentUser: getCurrentUser,
     setCurrentUser: setCurrentUser,
