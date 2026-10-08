@@ -1753,7 +1753,23 @@
     }
   }
 
+  // Shown when the page is served from a domain the cloud backend is not bound to
+  // (e.g. a GitHub Pages mirror): auth/DB calls would be rejected by Origin check.
+  function cloudBlockedPanel() {
+    return '<div class="panel" style="padding:24px;">' +
+      '<div style="margin-bottom:8px;font-weight:600;">' + esc(t('auth.cloudBlocked')) + '</div>' +
+      '<div style="color:var(--text-2);font-size:13px;line-height:1.65;">' + esc(t('auth.cloudBlockedHint', { domain: Cloud.boundHost() })) + '</div>' +
+      '</div>';
+  }
+
   async function openAuthModal() {
+    if (!Cloud.originAllowed()) {
+      showModal(t('auth.title'),
+        cloudBlockedPanel() +
+        '<div class="form-actions"><button class="btn btn-primary" id="btnBlockedOk">' + esc(t('common.close')) + '</button></div>');
+      $('btnBlockedOk').addEventListener('click', closeModal);
+      return;
+    }
     const ok = await Cloud.ensureReady();
     if (!ok) { toast(t('auth.signInFirst')); return; }
     if (Cloud.getCurrentUser()) {
@@ -1884,6 +1900,10 @@
       }
     }
     let html = pageHeader(t('nav.competition'), t('leaderboard.hint'));
+    if (!Cloud.originAllowed()) {
+      $('pageView').innerHTML = html + cloudBlockedPanel();
+      return;
+    }
     if (!u) {
       html += '<div class="panel" style="padding:34px;text-align:center;"><div style="margin-bottom:14px;color:var(--text-2);">' + esc(t('auth.signInFirst')) + '</div>' +
         '<button class="btn btn-primary" id="btnGoLogin">' + esc(t('auth.login')) + '</button></div>';
